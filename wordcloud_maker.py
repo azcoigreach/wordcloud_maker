@@ -37,7 +37,7 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 @click.group()
 @click.option('--debug', is_flag=True,
                 help='Debug Mode')
-@click.option('--working-directory', type=click.Path())
+@click.option('--working_directory', type=click.Path())
 @pass_config
 def main(config, debug, working_directory):
     init(convert=True)
@@ -50,11 +50,11 @@ def main(config, debug, working_directory):
         logger.setLevel(logging.INFO)
     
     if working_directory is None:
-        working_directory = './'
-        logger.debug('working_directory is %s', working_directory)
+        config.working_directory = '.'
+        logger.debug('working_directory is %s', config.working_directory)
     elif os.path.exists(working_directory) is False:
             os.mkdir(working_directory)
-            logger.debug('working_directory created as %s', working_directory)
+            logger.debug('working_directory created as %s', config.working_directory)
     
 
 
@@ -156,9 +156,11 @@ def gen_wordcloud(config, width, height, max_words, mask,margin,
     '''
     Generates wordclouds based on query responces from MongoDB stored in the query.pickle
     '''
+    logger.debug(config.working_directory)
+    
     start_time = time.strftime("%Y%m%d_%H%M%S")
     output_file = str(config.working_directory+"/wordcloud_"+start_time+".png")
-    logger.debug(config.working_directory)
+    
     d = path.dirname(__file__)
 
     # Read the whole text.
