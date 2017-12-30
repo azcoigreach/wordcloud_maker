@@ -9,5 +9,5 @@ $ pip install --editable .
 # RUN
 
 ```
-wc_maker --help
+wordcloud_maker --help
 ```

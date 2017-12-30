@@ -11,7 +11,7 @@ import click
 from colorama import init, Fore, Back, Style
 import coloredlogs, logging
 
-from pymongo import MongoClient
+from pymongo import MongoClient, monitoring
 from wordcloud import WordCloud, ImageColorGenerator, STOPWORDS
 import numpy as np
 import matplotlib.pyplot as plt
@@ -69,9 +69,33 @@ def main(config, debug, working_directory):
 @click.option('--limit', default=100, 
                 help='Limit query results')
 @pass_config
+   
 def get_data(config,server_ip,server_port, hours, limit):
     
     '''Get data from MongoDB Twitter Database'''
+
+    class CommandLogger(monitoring.CommandListener):
+
+        def started(self, event):
+            logging.info("Command {0.command_name} with request id "
+                        "{0.request_id} started on server "
+                        "{0.connection_id}".format(event))
+           
+
+
+        def succeeded(self, event):
+            logging.info("Command {0.command_name} with request id "
+                        "{0.request_id} on server {0.connection_id} "
+                        "succeeded in {0.duration_micros} "
+                        "microseconds".format(event))
+            
+        def failed(self, event):
+            logging.info("Command {0.command_name} with request id "
+                        "{0.request_id} on server {0.connection_id} "
+                        "failed in {0.duration_micros} "
+                        "microseconds".format(event))
+
+    monitoring.register(CommandLogger())
 
     try: 
         client = MongoClient(server_ip, server_port)

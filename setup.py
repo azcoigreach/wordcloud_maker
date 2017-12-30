@@ -4,7 +4,7 @@ setup(
     author="azcoigreach",
     author_email="azcoigreach@gmail.com",
     name = 'Wordcloud Maker',
-    version = '0.1.2',
+    version = '0.1.3',
     py_modules = ['mongo_wordcloud'],
     install_requires = [
         'click',
@@ -18,6 +18,6 @@ setup(
     ],
     entry_points = '''
         [console_scripts]
-        wc_maker=wordcloud_maker:main
+        wordcloud_maker=wordcloud_maker:main
     ''',
 )
