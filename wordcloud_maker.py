@@ -12,7 +12,7 @@ from colorama import init, Fore, Back, Style
 import coloredlogs, logging
 
 from pymongo import MongoClient, monitoring
-from wordcloud import WordCloud, ImageColorGenerator, STOPWORDS
+from wordcloud import WordCloud, ImageColorGenerator, STOPWORDS, random_color_func, get_single_color_func
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -37,7 +37,7 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 @click.group()
 @click.option('--debug', is_flag=True,
                 help='Debug Mode')
-@click.option('--working_directory', type=click.Path())
+@click.option('--working_directory', '-w', type=click.Path())
 @pass_config
 def main(config, debug, working_directory):
     init(convert=True)
@@ -81,8 +81,6 @@ def get_data(config,server_ip,server_port, hours, limit):
                         "{0.request_id} started on server "
                         "{0.connection_id}".format(event))
            
-
-
         def succeeded(self, event):
             logging.info("Command {0.command_name} with request id "
                         "{0.request_id} on server {0.connection_id} "
@@ -128,7 +126,7 @@ def get_data(config,server_ip,server_port, hours, limit):
         for i in query:
             printable = set(string.printable)
             text_filter = filter(lambda x: x in printable, i['_id'])
-            logger.info(Fore.LIGHTRED_EX + text_filter)
+            logger.info(Fore.LIGHTRED_EX + text_filter + ' : ' + str(i['count']))
             words = str('\n'+text_filter).encode('utf-8', 'ignore')
             f.write(words)
     
@@ -136,39 +134,39 @@ def get_data(config,server_ip,server_port, hours, limit):
 
 
 @main.command()
-@click.option('--width', default=1024, 
+@click.option('--width', default=1024, type=int,
                 help='Image width')
-@click.option('--height', default=768, 
+@click.option('--height', default=768, type=int,
                 help='Image height')
-@click.option('--max_words', default=200, 
+@click.option('--max_words', default=200, type=int,
                 help='maximum words in wordcloud')
-@click.option('--mask', default=None, 
+@click.option('--mask', default=None, type=file,
                 help='Mask filename')
-@click.option('--margin', default=2, 
+@click.option('--margin', default=2, type=int,
                 help='Margin between words')
-@click.option('--random_state', default=None, 
+@click.option('--random_state', default=None, type=int,
                 help='Add random state')
-@click.option('--min_font_size', default=8, 
+@click.option('--min_font_size', default=8, type=int,
                 help='Minimum Font size')
-@click.option('--max_font_size', default=None, 
+@click.option('--max_font_size', default=None, type=int,
                 help='Maximum Font size')
-@click.option('--ranks_only', default=None, 
-                help='Maximum Font size')
-@click.option('--prefer_horizontal', default=0.9, 
+@click.option('--ranks_only', default=None, type=bool,
+                help='')
+@click.option('--prefer_horizontal', default=0.9, type=float,
                 help='Prefer horizontal word alignment')
-@click.option('--relative_scaling', default=0.5, 
+@click.option('--relative_scaling', default=0.5, type=float,
                 help='Relative scaling between other words')
-@click.option('--font_step', default=1, 
+@click.option('--font_step', default=1, type=int,
                 help='Steps between font sizes')
-@click.option('--mode', default='RGB', 
-                help='Color mode')
-@click.option('--background_color', default='#000000', 
+@click.option('--mode', default='RGB',
+                help='Color mode ex."RGB"')
+@click.option('--background_color', default='#000000',
                 help='Background color in HEX')                                
-@click.option('--stopwords', default=None, 
-                help='Set stopwords')
-@click.option('--normalize_plurals', default=False, 
+@click.option('--stopwords', default=None, type=file,
+                help='Set stopwords file')
+@click.option('--normalize_plurals', default=False, type=bool,
                 help='Normalize plurals')
-@click.option('--font_path', default=None, 
+@click.option('--font_path', default=None, type=file,
                 help='Font path')
 
 @pass_config
@@ -178,7 +176,9 @@ def gen_wordcloud(config, width, height, max_words, mask,margin,
                     background_color, stopwords, normalize_plurals,
                     font_path):  
     '''
-    Generates wordclouds based on query responces from MongoDB stored in the query.pickle
+    Generates wordclouds based on query responces from MongoDB stored in the query_word.txt
+
+    Wordcloud API reference - http://amueller.github.io/word_cloud/references.html
     '''
     logger.debug(config.working_directory)
     
@@ -190,8 +190,8 @@ def gen_wordcloud(config, width, height, max_words, mask,margin,
     # Read the whole text.
     text = open(path.join(d, 'query_words.txt')).read()
 
-    if stopwords is not None:
-        stopwords = set(STOPWORDS)
+    # if stopwords is not None:
+    #     stopwords = None
     
     # lower max_font_size
     wc = WordCloud(width=width, height=height, max_words=max_words, mask=mask, margin=margin,
