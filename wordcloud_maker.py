@@ -57,7 +57,7 @@ def main(config, debug, working_directory):
               help='Server IPv4 address to MongoDB database')
 @click.option('--hours', '-h', default=24,
               help='Time frame of query over the last X hours')
-@click.option('--limit', '-l', default=100,
+@click.option('--limit', '-l', default=50,
               help='Limit query results')
 @pass_config
 
@@ -133,11 +133,11 @@ def get_data(config, server_ip, server_port, hours, limit):
 # Generate Wordcloud
 
 @main.command()
-@click.option('--width', default=1024, type=int,
+@click.option('--width', default=1920, type=int,
               help='Image width')
-@click.option('--height', default=768, type=int,
+@click.option('--height', default=1080, type=int,
               help='Image height')
-@click.option('--max_words', default=200, type=int,
+@click.option('--max_words', default=50, type=int,
               help='maximum words in wordcloud')
 @click.option('--mask', default=None, type=file,
               help='Mask filename')
@@ -151,11 +151,11 @@ def get_data(config, server_ip, server_port, hours, limit):
               help='Maximum Font size')
 @click.option('--ranks_only', default=None, type=bool,
               help='')
-@click.option('--prefer_horizontal', default=0.9, type=float,
+@click.option('--prefer_horizontal', default=0.6, type=float,
               help='Prefer horizontal word alignment')
-@click.option('--relative_scaling', default=0.5, type=float,
+@click.option('--relative_scaling', default=0.6, type=float,
               help='Relative scaling between other words')
-@click.option('--font_step', default=1, type=int,
+@click.option('--font_step', default=2, type=int,
               help='Steps between font sizes')
 @click.option('--mode', default='RGB',
               help='Color mode ex."RGB"')
