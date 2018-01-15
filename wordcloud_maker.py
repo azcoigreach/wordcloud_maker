@@ -14,6 +14,7 @@ from pymongo import MongoClient, monitoring
 from wordcloud import WordCloud, ImageColorGenerator, STOPWORDS, random_color_func, \
 get_single_color_func
 import matplotlib.pyplot as plt
+from pyfiglet import Figlet
 
 coloredlogs.install(level='DEBUG')
 logger = logging.getLogger(__name__)
@@ -47,6 +48,7 @@ def main(config, debug, working_directory):
     elif os.path.exists(working_directory) is False:
         os.mkdir(working_directory)
         logger.debug('working_directory created as %s', config.working_directory)
+    config.fig = Figlet(font='CLR6X10')
 
 # Get Data
 
@@ -127,7 +129,11 @@ def get_data(config, server_ip, server_port, hours, limit):
         logger.debug(words)
         pickle.dump(words, f)
 
-    logger.warning('Operation complete')
+    logger.info(Fore.YELLOW + 'Operation complete')
+    
+    print Fore.YELLOW + config.fig.renderText('OPERATION COMPLETE')
+
+
 
 
 # Generate Wordcloud
@@ -218,6 +224,7 @@ def gen_wordcloud(config, width, height, max_words, mask, margin,
                    stopwords=stopwords, normalize_plurals=normalize_plurals,
                    font_path=font_path).generate_from_frequencies(words)
 
+    print Fore.YELLOW + config.fig.renderText('WORDCLOUD GENERATED')
     plt.figure()
     plt.imshow(wc, interpolation="bilinear")
     plt.axis("off")
@@ -227,3 +234,5 @@ def gen_wordcloud(config, width, height, max_words, mask, margin,
     wc.to_file(output_file)
 
     plt.show()
+
+    
