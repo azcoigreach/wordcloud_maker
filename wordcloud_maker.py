@@ -4,6 +4,7 @@ from os import path
 from datetime import datetime, timedelta
 import dateutil.parser
 
+import pickle
 import json
 import string
 
@@ -17,7 +18,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import time
-from collections import Counter
+
 
 
 coloredlogs.install(level='DEBUG')
@@ -32,7 +33,7 @@ class Config(object):
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
 
-
+# CLI Interface
 
 @click.group()
 @click.option('--debug', is_flag=True,
@@ -57,16 +58,16 @@ def main(config, debug, working_directory):
             logger.debug('working_directory created as %s', config.working_directory)
     
 
-
+# Get Data
 
 @main.command()
-@click.option('--server_ip', default='localhost', 
+@click.option('--server_ip', '-ip', default='localhost', 
                 help='Server IPv4 address to MongoDB database')
-@click.option('--server_port', default=27017, 
+@click.option('--server_port', '-port', default=27017, 
                 help='Server IPv4 address to MongoDB database')
-@click.option('--hours', default=24, 
+@click.option('--hours', '-h', default=24, 
                 help='Time frame of query over the last X hours')
-@click.option('--limit', default=100, 
+@click.option('--limit', '-l', default=100, 
                 help='Limit query results')
 @pass_config
    
@@ -110,28 +111,38 @@ def get_data(config,server_ip,server_port, hours, limit):
     query = []
 
     try:
-        query = db.twitter_query.aggregate([
+        query = db.twitter_query.aggregate( [
                 { '$match' : {'created_at' : {'$gte' : start_time
-                                                , '$lte' : end_time}}},
+                                                , '$lte' : end_time} } },
                 { '$unwind' : '$entities.hashtags'},
                 {'$group': {'_id': '$entities.hashtags.text',
-                                'count' : { '$sum' : 1}}},
+                                'count' : { '$sum' : 1} } },
                 { "$sort" : { 'count' : -1} },
-                { '$limit' : limit } ])
+                { '$limit' : limit } ] )
     except Exception as err:
-        logger.error(err)    
+        logger.error('query error: %s',err)    
+  
     word_list = []
-
-    with open('query_words.txt', 'wb') as f:
-        for i in query:
+    words = []
+    freq = {}
+    with open('query_words.pickle', 'wb') as f:
+        
+        for i in iter(query):
             printable = set(string.printable)
             text_filter = filter(lambda x: x in printable, i['_id'])
+           
             logger.info(Fore.LIGHTRED_EX + text_filter + ' : ' + str(i['count']))
-            words = str('\n'+text_filter).encode('utf-8', 'ignore')
-            f.write(words)
-    
+            logger.debug(i)
+                        
+            words.append(i)
+        
+        logger.debug(words)
+        pickle.dump(words, f)
+
     logger.warning('Operation complete')
 
+
+# Generate Wordcloud
 
 @main.command()
 @click.option('--width', default=1024, type=int,
@@ -186,23 +197,44 @@ def gen_wordcloud(config, width, height, max_words, mask,margin,
     output_file = str(config.working_directory+"/wordcloud_"+start_time+".png")
     
     d = path.dirname(__file__)
+    
+    words = {}
+    with open('query_words.pickle', 'rb') as f:
+        text = pickle.load(f)
+        logger.debug(Fore.LIGHTRED_EX + 'pickle contents: ' + Fore.LIGHTCYAN_EX + '[%s] %s',type(text), text)
+                   
+        for i in iter(text):
+                # logger.debug('i : [%s] %s',type(text), text)
 
-    # Read the whole text.
-    text = open(path.join(d, 'query_words.txt')).read()
+                for key, value in i.items():
+                    if key == '_id':
+                        id_value = value
+                        logger.debug(id_value)
+                    if key == 'count':
+                        count_value = value
+                        logger.debug(count_value) 
+
+                freq = json.dumps({id_value : count_value})
+                freq = json.loads(freq)
+                words.update(freq) 
+
+    logger.debug('words list: [%s] %s',type(words), words)
 
     # if stopwords is not None:
     #     stopwords = None
     
-    # lower max_font_size
     wc = WordCloud(width=width, height=height, max_words=max_words, mask=mask, margin=margin,
                random_state=random_state, min_font_size=min_font_size, max_font_size=max_font_size, ranks_only=ranks_only,
                prefer_horizontal=prefer_horizontal, relative_scaling=relative_scaling, font_step=font_step, mode=mode,
                background_color=background_color, stopwords=stopwords, normalize_plurals=normalize_plurals,
-               font_path=font_path).generate(text)
+               font_path=font_path).generate_from_frequencies(words)
+
     plt.figure()
     plt.imshow(wc, interpolation="bilinear")
     plt.axis("off")
-    logging.warning('Saving file to %s', output_file)
-    wc.to_file(output_file)
-    plt.show()
 
+    logging.warning('Saving file to %s', output_file)
+
+    wc.to_file(output_file)
+
+    plt.show()
