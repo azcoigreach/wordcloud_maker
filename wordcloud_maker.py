@@ -164,7 +164,7 @@ def get_data(config, server_ip, server_port, hours, limit):
 @click.option('--font_step', default=2, type=int,
               help='Steps between font sizes')
 @click.option('--mode', default='RGB',
-              help='Color mode ex."RGB"')
+              help='Color mode ex."RGB" or "RGBA"')
 @click.option('--background_color', default='#000000',
               help='Background color in HEX')
 @click.option('--stopwords', default=None, type=file,
@@ -173,13 +173,50 @@ def get_data(config, server_ip, server_port, hours, limit):
               help='Normalize plurals')
 @click.option('--font_path', default=None, type=file,
               help='Font path')
+@click.option('--recolor', default=None,
+              help='Colormap: Accent, Accent_r, Blues, Blues_r, \
+              BrBG, BrBG_r, BuGn, BuGn_r, BuPu, BuPu_r, \
+              CMRmap, CMRmap_r, Dark2, Dark2_r, GnBu, GnBu_r, \
+              Greens, Greens_r, Greys, Greys_r, OrRd, OrRd_r, \
+              Oranges, Oranges_r, PRGn, PRGn_r, Paired, \
+              Paired_r, Pastel1, Pastel1_r, Pastel2, \
+              Pastel2_r, PiYG, PiYG_r, PuBu, PuBuGn, \
+              PuBuGn_r, PuBu_r, PuOr, PuOr_r, PuRd, PuRd_r, \
+              Purples, Purples_r, RdBu, RdBu_r, RdGy, RdGy_r, \
+              RdPu, RdPu_r, RdYlBu, RdYlBu_r, RdYlGn, \
+              RdYlGn_r, Reds, Reds_r, Set1, Set1_r, Set2, \
+              Set2_r, Set3, Set3_r,  Spectral, Spectral_r, \
+              Vega10, Vega10_r, Vega20, Vega20_r, Vega20b, \
+              Vega20b_r, Vega20c, Vega20c_r, Wistia, \
+              Wistia_r, YlGn, YlGnBu, YlGnBu_r, YlGn_r, \
+              YlOrBr, YlOrBr_r, YlOrRd, YlOrRd_r, afmhot, \
+              afmhot_r, autumn, autumn_r, binary, binary_r, \
+              bone, bone_r, brg, brg_r, bwr, bwr_r, cool, \
+              cool_r, coolwarm, coolwarm_r, copper, copper_r, \
+              cubehelix, cubehelix_r, flag, flag_r, \
+              gist_earth, gist_earth_r, gist_gray, \
+              gist_gray_r, gist_heat, gist_heat_r, \
+              gist_ncar, gist_ncar_r, gist_rainbow, \
+              gist_rainbow_r, gist_stern, gist_stern_r, \
+              gist_yarg, gist_yarg_r, gnuplot, gnuplot2, \
+              gnuplot2_r, gnuplot_r, gray, gray_r, hot, \
+              hot_r, hsv, hsv_r, inferno, inferno_r, \
+              jet, jet_r, magma, magma_r, nipy_spectral, \
+              nipy_spectral_r, ocean, ocean_r, pink, \
+              pink_r, plasma, plasma_r, prism, prism_r, \
+              rainbow, rainbow_r, seismic, seismic_r, \
+              spectral, spectral_r, spring, spring_r, \
+              summer, summer_r, tab10, tab10_r, tab20, \
+              tab20_r, tab20b, tab20b_r, tab20c, tab20c_r, \
+              terrain, terrain_r, viridis, \
+              viridis_r, winter, winter_r')
 
 @pass_config
 def gen_wordcloud(config, width, height, max_words, mask, margin,
                   random_state, min_font_size, max_font_size, ranks_only,
                   prefer_horizontal, relative_scaling, font_step, mode,
                   background_color, stopwords, normalize_plurals,
-                  font_path):
+                  font_path, recolor):
     '''
     Generates wordclouds based on query responces from MongoDB stored in the query_word.txt
 
@@ -222,7 +259,25 @@ def gen_wordcloud(config, width, height, max_words, mask, margin,
                    prefer_horizontal=prefer_horizontal, relative_scaling=relative_scaling,
                    font_step=font_step, mode=mode, background_color=background_color,
                    stopwords=stopwords, normalize_plurals=normalize_plurals,
-                   font_path=font_path).generate_from_frequencies(words)
+                   font_path=font_path).generate_from_frequencies(words).recolor(colormap=recolor)
+
+    logger.info(Fore.LIGHTCYAN_EX + 'width = ' + Fore.LIGHTMAGENTA_EX + '%s', width)
+    logger.info(Fore.LIGHTCYAN_EX + 'height = ' + Fore.LIGHTMAGENTA_EX + '%s', height)
+    logger.info(Fore.LIGHTCYAN_EX + 'max_words = ' + Fore.LIGHTMAGENTA_EX + '%s', max_words)
+    logger.info(Fore.LIGHTCYAN_EX + 'mask = ' + Fore.LIGHTMAGENTA_EX + '%s', mask)
+    logger.info(Fore.LIGHTCYAN_EX + 'margin = ' + Fore.LIGHTMAGENTA_EX + '%s', margin)
+    logger.info(Fore.LIGHTCYAN_EX + 'random_state = ' + Fore.LIGHTMAGENTA_EX + '%s', random_state)
+    logger.info(Fore.LIGHTCYAN_EX + 'min_font_size = ' + Fore.LIGHTMAGENTA_EX + '%s', min_font_size)
+    logger.info(Fore.LIGHTCYAN_EX + 'max_font_size = ' + Fore.LIGHTMAGENTA_EX + '%s', max_font_size)
+    logger.info(Fore.LIGHTCYAN_EX + 'ranks_only = ' + Fore.LIGHTMAGENTA_EX + '%s', ranks_only)
+    logger.info(Fore.LIGHTCYAN_EX + 'prefer_horizontal = ' + Fore.LIGHTMAGENTA_EX + '%s', prefer_horizontal)
+    logger.info(Fore.LIGHTCYAN_EX + 'relative_scaling = ' + Fore.LIGHTMAGENTA_EX + '%s', relative_scaling)
+    logger.info(Fore.LIGHTCYAN_EX + 'font_step = ' + Fore.LIGHTMAGENTA_EX + '%s', font_step)
+    logger.info(Fore.LIGHTCYAN_EX + 'mode = ' + Fore.LIGHTMAGENTA_EX + '%s', mode)
+    logger.info(Fore.LIGHTCYAN_EX + 'background_color = ' + Fore.LIGHTMAGENTA_EX + '%s', background_color)
+    logger.info(Fore.LIGHTCYAN_EX + 'stopwords = ' + Fore.LIGHTMAGENTA_EX + '%s', stopwords)
+    logger.info(Fore.LIGHTCYAN_EX + 'normalize_plurals = ' + Fore.LIGHTMAGENTA_EX + '%s', normalize_plurals)
+    logger.info(Fore.LIGHTCYAN_EX + 'font_path = ' + Fore.LIGHTMAGENTA_EX + '%s', font_path)
 
     print Fore.YELLOW + config.fig.renderText('WORDCLOUD GENERATED')
     plt.figure()
