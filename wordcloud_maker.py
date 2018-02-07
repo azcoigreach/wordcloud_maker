@@ -34,6 +34,12 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 @click.option('--working_directory', '-w', type=click.Path())
 @pass_config
 def main(config, debug, working_directory):
+    '''
+    Generates wordclouds based on query responces from MongoDB Twitter Database. -
+    https://github.com/azcoigreach/twitter_logger
+
+    Wordcloud API reference - http://amueller.github.io/word_cloud/references.html
+    '''
     init(convert=True)
     config.debug = debug
     config.working_directory = working_directory
@@ -69,7 +75,10 @@ def main(config, debug, working_directory):
 @pass_config
 
 def get_data(config, server_ip, server_port, start_time, end_time, offset, limit):
-    '''Get data from MongoDB Twitter Database'''
+    '''
+    Populates query_words.pickle with a list of hashtags and frequencies from a MongoDB
+    database containing raw Twitter data.
+    '''
 
     class CommandLogger(monitoring.CommandListener):
 
@@ -140,7 +149,7 @@ def get_data(config, server_ip, server_port, start_time, end_time, offset, limit
 
     words = []
 
-    with open('query_words.pickle', 'wb') as f:
+    with open(config.working_directory + '/query_words.pickle', 'wb') as f:
 
         for i in iter(query):
             printable = set(string.printable)
@@ -243,17 +252,15 @@ def gen_wordcloud(config, width, height, max_words, mask, margin,
                   background_color, stopwords, normalize_plurals,
                   font_path, recolor):
     '''
-    Generates wordclouds based on query responces from MongoDB stored in the query_word.txt
-
-    Wordcloud API reference - http://amueller.github.io/word_cloud/references.html
+    Generates wordcloud from list of words and frequencies stored in query_words.pickle.
     '''
     logger.debug(config.working_directory)
 
     start_time = time.strftime("%Y%m%d_%H%M%S")
-    output_file = str(config.working_directory+"/wordcloud_"+start_time+".png")
+    output_file = str(config.working_directory + "/wordcloud_" + start_time + ".png")
 
     words = {}
-    with open('query_words.pickle', 'rb') as f:
+    with open(config.working_directory + '/query_words.pickle', 'rb') as f:
         text = pickle.load(f)
         logger.debug(Fore.LIGHTRED_EX + 'pickle contents: ' + Fore.LIGHTCYAN_EX + '[%s] %s',\
                      type(text), text)
