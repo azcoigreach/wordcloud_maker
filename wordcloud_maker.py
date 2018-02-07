@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+import sys
 import os
 from os import path
 import time
@@ -57,13 +58,17 @@ def main(config, debug, working_directory):
               help='Server IPv4 address to MongoDB database')
 @click.option('--server_port', '-port', default=27017,
               help='Server IPv4 address to MongoDB database')
-@click.option('--hours', '-h', default=24,
-              help='Time frame of query over the last X hours')
+@click.option('--offset', '-o', default=None, type=int,
+              help='Time frame of query - X hours offset before end_time')
+@click.option('--end_time', '-e', default=None,
+              help='Query start datetime "2018-02-04 16:20"')
+@click.option('--start_time', '-s', default=None,
+              help='Query start datetime "2018-02-03 16:20"')
 @click.option('--limit', '-l', default=50,
               help='Limit query results')
 @pass_config
 
-def get_data(config, server_ip, server_port, hours, limit):
+def get_data(config, server_ip, server_port, start_time, end_time, offset, limit):
     '''Get data from MongoDB Twitter Database'''
 
     class CommandLogger(monitoring.CommandListener):
@@ -93,10 +98,30 @@ def get_data(config, server_ip, server_port, hours, limit):
         logger.warning('MongoDB connected...')
     except Exception as err:
         logging.error(err)
+    
+    if end_time == None:
+        end_time = datetime.now()
+    else:
+        end_time = datetime.strptime(end_time, '%Y-%m-%d %H:%M')
+    
+    if (offset == None) and (start_time == None):
+        offset = 24
+        start_time = (end_time - timedelta(hours=offset))
+    elif (offset != None) and (start_time != None):
+        logger.error(Fore.LIGHTRED_EX + 'Can not use OFFSET and START_TIME together. Pick one.')
+        sys.exit(-1)
+    elif (offset != None):
+        start_time = (end_time - timedelta(hours=offset))
+    elif (start_time != None):
+        start_time = datetime.strptime(start_time, '%Y-%m-%d %H:%M')
 
-    start_time = (datetime.now() - timedelta(hours=hours))
+
+    
+        
+
+    # start_time = (datetime.now() - timedelta(hours=hours))
     logger.info(Fore.CYAN+'created_at start time - %s', start_time)
-    end_time = datetime.now()
+    # end_time = datetime.now()
     logger.info(Fore.CYAN+'created_at end time - %s', end_time)
 
     query = []
