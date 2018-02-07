@@ -163,9 +163,7 @@ def get_data(config, server_ip, server_port, start_time, end_time, offset, limit
         logger.debug(words)
         pickle.dump(words, f)
 
-    logger.info(Fore.YELLOW + 'Operation complete')
-    
-    print Fore.YELLOW + config.fig.renderText('OPERATION COMPLETE')
+    logger.info(Fore.YELLOW + config.fig.renderText('OPERATION COMPLETE'))
 
 
 
@@ -311,7 +309,7 @@ def gen_wordcloud(config, width, height, max_words, mask, margin,
     logger.info(Fore.LIGHTCYAN_EX + 'normalize_plurals = ' + Fore.LIGHTMAGENTA_EX + '%s', normalize_plurals)
     logger.info(Fore.LIGHTCYAN_EX + 'font_path = ' + Fore.LIGHTMAGENTA_EX + '%s', font_path)
 
-    print Fore.YELLOW + config.fig.renderText('WORDCLOUD GENERATED')
+    logger.info(Fore.YELLOW + config.fig.renderText('WORDCLOUD GENERATED'))
     plt.figure()
     plt.imshow(wc, interpolation="bilinear")
     plt.axis("off")
