@@ -11,6 +11,8 @@ import logging
 import coloredlogs
 import click
 from colorama import init, Fore
+import numpy as np
+from PIL import Image
 from pymongo import MongoClient, monitoring
 from wordcloud import WordCloud, ImageColorGenerator, STOPWORDS, random_color_func, \
 get_single_color_func
@@ -177,15 +179,15 @@ def get_data(config, server_ip, server_port, start_time, end_time, offset, limit
               help='Image height')
 @click.option('--max_words', default=50, type=int,
               help='maximum words in wordcloud')
-@click.option('--mask', default=None, type=file,
+@click.option('--mask', default=None, type=click.Path(),
               help='Mask filename')
 @click.option('--margin', default=2, type=int,
               help='Margin between words')
 @click.option('--random_state', default=None, type=int,
               help='Add random state')
-@click.option('--min_font_size', default=8, type=int,
+@click.option('--min_font_size', default=8, type=float,
               help='Minimum Font size')
-@click.option('--max_font_size', default=None, type=int,
+@click.option('--max_font_size', default=None, type=float,
               help='Maximum Font size')
 @click.option('--ranks_only', default=None, type=bool,
               help='')
@@ -199,11 +201,11 @@ def get_data(config, server_ip, server_port, start_time, end_time, offset, limit
               help='Color mode ex."RGB" or "RGBA"')
 @click.option('--background_color', default='#000000',
               help='Background color in HEX')
-@click.option('--stopwords', default=None, type=file,
+@click.option('--stopwords', default=None, type=click.Path(),
               help='Set stopwords file')
 @click.option('--normalize_plurals', default=False, type=bool,
               help='Normalize plurals')
-@click.option('--font_path', default=None, type=file,
+@click.option('--font_path', default=None, type=click.Path(),
               help='Font path')
 @click.option('--recolor', default=None,
               help='Colormap: Accent, Accent_r, Blues, Blues_r, \
@@ -283,7 +285,13 @@ def gen_wordcloud(config, width, height, max_words, mask, margin,
     # if stopwords is not None:
     #     stopwords = None
 
-    wc = WordCloud(width=width, height=height, max_words=max_words, mask=mask, margin=margin,
+    if mask != None:
+        mask_array = np.array(Image.open(mask))
+        logger.debug('Mask converted to numpy array %s', mask_array)
+    else:
+        mask_array = None
+
+    wc = WordCloud(width=width, height=height, max_words=max_words, mask=mask_array, margin=margin,
                    random_state=random_state, min_font_size=min_font_size,
                    max_font_size=max_font_size, ranks_only=ranks_only,
                    prefer_horizontal=prefer_horizontal, relative_scaling=relative_scaling,

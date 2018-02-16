@@ -4,7 +4,7 @@ setup(
     author="azcoigreach",
     author_email="azcoigreach@gmail.com",
     name = 'Wordcloud Maker',
-    version = '0.2.2',
+    version = '0.2.3',
     py_modules = ['wordcloud_maker'],
     install_requires = [
         'click',
@@ -14,7 +14,8 @@ setup(
         'matplotlib',
         'pillow',
         'wordcloud',
-        'pyfiglet'
+        'pyfiglet',
+        'numpy',
     ],
     entry_points = '''
         [console_scripts]

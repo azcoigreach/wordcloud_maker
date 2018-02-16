@@ -22,7 +22,7 @@ wordcloud_maker --help
 |Complete   |Priority   |Task                                                            |
 |:---------:|:---------:|:---------------------------------------------------------------|
 |           |High       |Implement settings.ini for all default options and directories. |
-|           |Medium     |Get Fonts and Masks working.                                    |
+|2018/02/10 |Medium     |Get Fonts and Masks working.                                    |
 |           |High       |Get Stopwords working.                                          |
 |           |High       |Filter non ascii hashtags on gen_wordcloud.                     |
 |           |Medium     |Posting capabilities for Twitter and Imgur.                     |
