@@ -19,6 +19,7 @@ get_single_color_func
 import matplotlib.pyplot as plt
 from pyfiglet import Figlet
 
+
 coloredlogs.install(level='DEBUG')
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,7 @@ def main(config, debug, working_directory):
 # Get Data
 
 @main.command()
+
 @click.option('--server_ip', '-ip', default='localhost',
               help='Server IPv4 address to MongoDB database')
 @click.option('--server_port', '-port', default=27017,
@@ -72,11 +74,13 @@ def main(config, debug, working_directory):
               help='Query start datetime "2018-02-04 16:20"')
 @click.option('--start_time', '-s', default=None,
               help='Query start datetime "2018-02-03 16:20"')
+@click.option('--tz_offset', '-tz', default=0, type=int,
+              help='Time Zone offset (db times are GMT)')
 @click.option('--limit', '-l', default=50,
               help='Limit query results')
 @pass_config
 
-def get_data(config, server_ip, server_port, start_time, end_time, offset, limit):
+def get_data(config, server_ip, server_port, start_time, end_time, offset, limit, tz_offset):
     '''
     Populates query_words.pickle with a list of hashtags and frequencies from a MongoDB
     database containing raw Twitter data.
@@ -111,7 +115,7 @@ def get_data(config, server_ip, server_port, start_time, end_time, offset, limit
         logging.error(err)
     
     if end_time == None:
-        end_time = datetime.now()
+        end_time = datetime.now() + timedelta(hours=tz_offset)
     else:
         end_time = datetime.strptime(end_time, '%Y-%m-%d %H:%M')
     
