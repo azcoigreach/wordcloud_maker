@@ -13,7 +13,10 @@
 *.egg-info
 *.txt
 *.png
+*.ttf
 settings.ini
+working/
+output/
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
