@@ -1,39 +1,51 @@
+[debug]
+debug = True
+
 [twitter]
-consumerkey = <your-twitter-consumer-key>
-consumersecret = <your-twitter-consumer-secret>
-# accesstoken and accesstokensecret are optional, if you don't provide them the program will generate them for you
-accesstoken = <your-twitter-access-token>
-accesstokensecret = <your-twitter-token-secret>
+consumerkey = 
+consumersecret = 
+accesstoken = 
+accesstokensecret = 
 
 [imgur]
-# see https://api.imgur.com/oauth2
-clientid = <your-imgur-client-id>
-clientsecret = <your-imgur-client-secret>
-accesstoken = <your-imgur-access-token>
-refreshtoken = <your-imgur-refresh-token>
+clientid = 
+clientsecret = 
+accesstoken = 
+refreshtoken = 
+
+[mongodb]
+
+server_ip = localhost
+server_port = 27017
 
 [configs]
-# you should leave this to 1 at the beginning, the application will update this automatically
-lastmentionid = 1
+botname = azcoigreach
+wordcloudhashtag = wordcloud, wordclouds, cloudwords, cloudword
+descriptionimagestr = (http://twitter.com/azcoigreach)
 
-# twitter name of the bot account e.g. wordnuvola
-botname = <your-bot-name>
-
-# hashtags to which this bot respond (separated by ',') e.g. wordcloud,cloudword
-wordcloudhashtag = <your-hashtag>,<your-other-hashtag>
-
-# max number of words displayed in the image
-maxwords = 80
-
-# directory where images are saved
 outputdir = ./output
+workingdir = ./working
+width = 1920
+height = 1080
+maxwords = 50
+mask
+margin = 7
+random_state
+min_font_size = 16
+max_font_size = 356
+ranks_only = True
+prefer_horizontal = 0.75
+relative_scaling = 0.25
+font_step = 2
+mode = RGB
+background_color = #000000
+stopwords
+normalize_plurals = False
+font_path =  ./font/RobotoCondensed-Bold.ttf
+recolor = Set2
 
-# max number of tweets (including retweets) downloaded
-maxresults = 1000
-
-# width and height of the generated image
-width = 1280
-height = 960
-
-# string description for the uploaded image on imgur
-descriptionimagestr = (made with http://twitter.com/<your-bot-name>)
+offset = 24
+end_time
+start_time
+tz_offset = 7
+max_results = 50
