@@ -20,10 +20,10 @@ import matplotlib.pyplot as plt
 from pyfiglet import Figlet
 from imgurpython import ImgurClient
 from imgurpython.helpers.error import ImgurClientError, ImgurClientRateLimitError
-from twitter import TwitterHTTPError
-# from twitterapi import TwitterAPI
+from twitter import *
+# from twitterapi import TwitterApi
 from settings import Settings
-
+from functools import update_wrapper
 
 coloredlogs.install(level='DEBUG')
 logger = logging.getLogger(__name__)
@@ -32,20 +32,19 @@ class Context(object):
     def __init__(self):
         self.debug = False
         self.s = Settings("./settings.ini")
-        # self.bot = False
         
 pass_context = click.make_pass_decorator(Context, ensure=True)
 
-# CLI Interface
+# CLI Interface (Main)
 
-@click.group()
-@click.option('--debug', is_flag=True,
-              help='Debug Mode')
-@click.option('--working_directory', '-w', type=click.Path())
-@click.option('--output_directory', '-o', type=click.Path())
+@click.group(chain=True)
+# @click.option('--debug', is_flag=True,
+#               help='Debug Mode')
+# @click.option('--working_directory', '-w', type=click.Path())
+# @click.option('--output_directory', '-o', type=click.Path())
 @pass_context
 
-def main(ctx, debug, working_directory, output_directory):
+def main(ctx):
     '''
     Generates wordclouds based on query responces from MongoDB Twitter Database. -
     https://github.com/azcoigreach/twitter_logger
@@ -55,26 +54,26 @@ def main(ctx, debug, working_directory, output_directory):
     Edit ./settings.ini to modify defaults.
     '''
     init(convert=True)
-    ctx.debug = debug
+    ctx.debug = ctx.s.read_debug()
     ctx.workingdir = ctx.s.read_working_dir()
     ctx.outputdir = ctx.s.read_output_dir()
     
 
-    if debug is True:
+    if ctx.debug is True:
         logger.setLevel(logging.DEBUG)
         logger.debug('<<<DEBUG MODE>>>')
     else:
         logger.setLevel(logging.INFO)
 
-    if working_directory is None:
-        logger.debug('working_directory is %s', ctx.workingdir)
-    else:
-        ctx.workingdir = working_directory
+    # if working_directory is None:
+    #     logger.debug('working_directory is %s', ctx.workingdir)
+    # else:
+    #     ctx.workingdir = working_directory
 
-    if output_directory is None:
-        logger.debug('output_directory is %s', ctx.outputdir)
-    else:
-        ctx.outputdir = output_directory
+    # if output_directory is None:
+    #     logger.debug('output_directory is %s', ctx.outputdir)
+    # else:
+    #     ctx.outputdir = output_directory
 
     if os.path.exists(ctx.workingdir) is False:
         os.mkdir(ctx.workingdir)
@@ -86,14 +85,55 @@ def main(ctx, debug, working_directory, output_directory):
 
     ctx.fig = Figlet(font='CLR6X10')
 
-    with open(ctx.workingdir + '/bot.pickle', 'wb') as f:
-        bot = False
-        pickle.dump(bot, f)
+    # with open(ctx.workingdir + '/bot.pickle', 'wb') as f:
+    #     bot = False
+    #     pickle.dump(bot, f)
+
+@main.resultcallback()
+def process_commands(processors):
+    """This result callback is invoked with an iterable of all the chained
+    subcommands.  As in this example each subcommand returns a function
+    we can chain them together to feed one into the other, similar to how
+    a pipe on unix works.
+    """
+    # Start with an empty iterable.
+    stream = ()
+
+    # Pipe it through all stream processors.
+    for processor in processors:
+        stream = processor(stream)
+
+    # Evaluate the stream and throw away the items.
+    for _ in stream:
+        pass
+
+
+def processor(f):
+    """Helper decorator to rewrite a function so that it returns another
+    function from it.
+    """
+    def new_func(*args, **kwargs):
+        def processor(stream):
+            return f(stream, *args, **kwargs)
+        return processor
+    return update_wrapper(new_func, f)
+
+
+def generator(f):
+    """Similar to the :func:`processor` but passes through old values
+    unchanged and does not pass through the values as parameter.
+    """
+    @processor
+    def new_func(stream, *args, **kwargs):
+        for item in stream:
+            yield item
+        for item in f(*args, **kwargs):
+            yield item
+    return update_wrapper(new_func, f)
 
 # Get Data
 
-@main.command()
-
+@main.command('get_data')
 @click.option('--server_ip', '-ip',
               help='Server IPv4 address to MongoDB database')
 @click.option('--server_port', '-port',
@@ -109,16 +149,16 @@ def main(ctx, debug, working_directory, output_directory):
 @click.option('--max_results', '-max',
               help='Limit query results')
 @pass_context
-
+@generator
 def get_data(ctx, server_ip, server_port, start_time, end_time, offset, max_results, tz_offset):
     '''
     Populates query_words.pickle with a list of hashtags and frequencies from a MongoDB
     database containing raw Twitter data.
     '''
-    with open(ctx.workingdir + '/bot.pickle', 'rb') as f:
-        bot = pickle.load(f)
+    # with open(ctx.workingdir + '/bot.pickle', 'rb') as f:
+    #     bot = pickle.load(f)
 
-    logger.warning('<<<--gd in bot mode %s -->>>', bot)
+    # logger.warning('<<<--gd in bot mode %s -->>>', bot)
 
     class CommandLogger(monitoring.CommandListener):
 
@@ -226,13 +266,13 @@ def get_data(ctx, server_ip, server_port, start_time, end_time, offset, max_resu
         pickle.dump(words, f)
 
     logger.info(Fore.YELLOW + ctx.fig.renderText('OPERATION COMPLETE'))
-
+    yield
 
 
 
 # Generate Wordcloud
 
-@main.command()
+@main.command('gen_wordcloud')
 
 @click.option('--width', type=int,
               help='Image width')
@@ -308,7 +348,7 @@ def get_data(ctx, server_ip, server_port, start_time, end_time, offset, max_resu
 @click.option('--show', is_flag=True, expose_value=True, \
               is_eager=False, help='Show Python output')
 @pass_context
-
+@generator
 def gen_wordcloud(ctx, width, height, max_words, mask, margin,
                   random_state, min_font_size, max_font_size, ranks_only,
                   prefer_horizontal, relative_scaling, font_step, mode,
@@ -318,11 +358,11 @@ def gen_wordcloud(ctx, width, height, max_words, mask, margin,
     Generates wordcloud from list of words and frequencies stored in query_words.pickle.
     '''
 
-    with open(ctx.workingdir + '/bot.pickle', 'rb') as f:
-        bot = pickle.load(f)
+    # with open(ctx.workingdir + '/bot.pickle', 'rb') as f:
+    #     bot = pickle.load(f)
     
     logger.debug(ctx.workingdir)
-    logger.warning('<<<--bot mode %s -->>>', bot)
+    # logger.warning('<<<--bot mode %s -->>>', bot)
 
     start_time = time.strftime("%Y%m%d_%H%M%S")
     output_file = str(ctx.outputdir + "/wordcloud_" + start_time + ".png")
@@ -435,13 +475,92 @@ def gen_wordcloud(ctx, width, height, max_words, mask, margin,
     else:
         logger.debug('<<<--show output-->>>')
         plt.show()
+    yield
 
 # Automation
 @main.command()
-# @main.resultcallback()
-@click.pass_context
+@pass_context
+@generator
+def post(ctx):
+    logger.warning('posting output')
+    twitter_api = Twitter(auth = OAuth(ctx.s.read_twitter_access_token(), ctx.s.read_twitter_access_token_secret(),
+                          ctx.s.read_twitter_consumer_key(), ctx.s.read_twitter_consumer_secret()))
 
-def auto(ctx):
+    imgur_client = ImgurClient(ctx.s.read_imgur_client_id(), ctx.s.read_imgur_client_secret(),
+                               ctx.s.read_imgur_access_token(), ctx.s.read_imgur_refresh_token())
     
-    ctx.invoke(get_data, ctx)
-    ctx.invoke(gen_wordcloud, ctx)
+    
+    #TODO: Automate Status and Title
+    title = "Top 50 hashtags tweeted to @realDonaldTrump."
+    status = "Top 50 hashtags tweeted to @realDonaldTrump. "
+
+    with open(ctx.workingdir + '/output_file.pickle', 'rb') as f:
+            output_file = pickle.load(f)
+            logger.debug('Loading output_file.pickle')
+            
+
+    def upload_image(image_path, title, max_errors=3, sleep_seconds=60):
+        """ Try to upload the image to imgur.com.
+        :param image_path: path to the image file
+        :param title: title of the image
+        :param max_errors: max number of retries
+        :param sleep_seconds: number of seconds to wait when an error happens
+        :return: an imgur object (use `id` key to get the id to use in https://imgur.com/<id>),
+                 None if an error occurs
+        """
+        config = {'title': title,
+                  'name': title,
+                  'description': title + '\n' + ctx.s.read_description_image_str()}
+        errors = 0
+        while True:
+            try:
+                logger.info("I'm going to upload this image: {0}".format(image_path))
+                return imgur_client.upload_from_path(image_path, config=config, anon=False)
+            except Exception as e:
+                errors += 1
+                logger.error(e)
+
+                logger.error('Encountered {0} error(s). Retrying in {1} seconds'.format(errors, sleep_seconds))
+
+                if (errors > max_errors):
+                    return None
+
+                time.sleep(sleep_seconds)
+
+    
+    def update_status(status, max_errors=3, sleep_seconds=60):
+        """
+        :param status: text of the tweet
+        :param max_errors: max number of retries
+        :param sleep_seconds: number of seconds to wait when an error happens
+        :return: see https://dev.twitter.com/rest/reference/post/statuses/update example result,
+                 None if an error occurs
+        """
+        errors = 0
+        while True:
+            try:
+                logger.info('Tweeting status: %s', status)
+                return twitter_api.statuses.update(status=status)
+            except Exception as e:
+                errors += 1
+
+                logger.error("Error while trying to post: " + str(e))
+                logger.error('Encountered {0} error(s). Retrying in {1} seconds'.format(errors, sleep_seconds))
+
+                if (errors > max_errors):
+                    return None
+
+                time.sleep(sleep_seconds)
+    
+    imgur_id = upload_image(output_file, title)
+
+    if imgur_id is None:
+        logger.error("Error: failed uploading the word cloud image\n")
+        exit
+
+    imgur_id = imgur_id['id']
+
+    status += 'http://imgur.com/' + imgur_id
+    tweet = update_status(status)
+
+    yield

@@ -10,6 +10,10 @@ class Settings(object):
         self.TWITTER = 'twitter'
         self.CONFIGS = 'configs'
         self.MONGODB = 'mongodb'
+        self.DEBUG = 'debug'
+
+    def read_debug(self):
+        return self.config[self.DEBUG]['debug']
 
     def read_twitter_consumer_key(self):
         return self.config[self.TWITTER]['consumerkey']
