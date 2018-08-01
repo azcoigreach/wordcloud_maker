@@ -22,17 +22,22 @@ $ pip install --editable .
 wordcloud_maker --help
 ```
 
+Chain commands together to automate.
+```
+wordcloud_maker get_data gen_wordcloud post
+```
+
 # TODO
 |Complete   |Priority   |Task                                                            |
 |:---------:|:---------:|:---------------------------------------------------------------|
-|           |High       |Get Stopwords working.                                          |
-|           |LOW        |Filter non ascii hashtags on gen_wordcloud.                     |
-|In Progress|Medium     |Posting capabilities for Twitter and Imgur.                     |
+|TODO       |High       |Get Stopwords working.                                          |
+|TODO       |LOW        |Filter non ascii hashtags on gen_wordcloud.                     |
+|Working    |Medium     |Posting capabilities for Twitter and Imgur.                     |
 |In Progress|High       |Automate and Dockerize.                                         |
 
 # MENTIONS
 
-This code was hacked together with code from the following sources.
+This code was inspired by or hacked together with code from the following sources.
 
 https://github.com/defacto133/twitter-wordcloud-bot
 https://github.com/amueller/word_cloud

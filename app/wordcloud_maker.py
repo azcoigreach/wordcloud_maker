@@ -21,7 +21,6 @@ from pyfiglet import Figlet
 from imgurpython import ImgurClient
 from imgurpython.helpers.error import ImgurClientError, ImgurClientRateLimitError
 from twitter import *
-# from twitterapi import TwitterApi
 from settings import Settings
 from functools import update_wrapper
 
@@ -30,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 class Context(object):
     def __init__(self):
-        self.debug = False
+        self.logging_level = logger
         self.s = Settings("./settings.ini")
         
 pass_context = click.make_pass_decorator(Context, ensure=True)
@@ -54,16 +53,14 @@ def main(ctx):
     Edit ./settings.ini to modify defaults.
     '''
     init(convert=True)
-    ctx.debug = ctx.s.read_debug()
+    ctx.logging_level = ctx.s.read_logging()
     ctx.workingdir = ctx.s.read_working_dir()
     ctx.outputdir = ctx.s.read_output_dir()
     
-
-    if ctx.debug is True:
-        logger.setLevel(logging.DEBUG)
-        logger.debug('<<<DEBUG MODE>>>')
-    else:
-        logger.setLevel(logging.INFO)
+    logger.setLevel(ctx.logging_level)
+    logger.debug('<<<DEBUG MODE>>>')
+    # else:
+    #     logger.setLevel(logging.INFO)
 
     # if working_directory is None:
     #     logger.debug('working_directory is %s', ctx.workingdir)
@@ -83,11 +80,7 @@ def main(ctx):
         os.mkdir(ctx.outputdir)
         logger.debug('output_directory created as %s', ctx.outputdir)
 
-    ctx.fig = Figlet(font='CLR6X10')
-
-    # with open(ctx.workingdir + '/bot.pickle', 'wb') as f:
-    #     bot = False
-    #     pickle.dump(bot, f)
+    # ctx.fig = Figlet(font='CLR6X10') 
 
 @main.resultcallback()
 def process_commands(processors):
@@ -265,7 +258,12 @@ def get_data(ctx, server_ip, server_port, start_time, end_time, offset, max_resu
         logger.debug(words)
         pickle.dump(words, f)
 
-    logger.info(Fore.YELLOW + ctx.fig.renderText('OPERATION COMPLETE'))
+    with open(ctx.workingdir + '/query_time.pickle', 'wb') as f:
+        query_time_str = "%s to %s GMT+0" % (str(datetime.strftime(start_time, '%Y-%m-%d %H:%M')), str(datetime.strftime(end_time, '%Y-%m-%d %H:%M')))
+        logger.debug(query_time_str)
+        pickle.dump(query_time_str, f)
+
+    # logger.info(Fore.YELLOW + ctx.fig.renderText('OPERATION COMPLETE'))
     yield
 
 
@@ -479,25 +477,49 @@ def gen_wordcloud(ctx, width, height, max_words, mask, margin,
 
 # Automation
 @main.command()
+@click.option('--quiet', is_flag=True,
+              help='Quiet mode - no posting')
 @pass_context
 @generator
-def post(ctx):
+def post(ctx, quiet):
     logger.warning('posting output')
+
+    with open(ctx.workingdir + '/output_file.pickle', 'rb') as f:
+            output_file = pickle.load(f)
+            logger.debug('Loading output_file.pickle')
+
+    with open(ctx.workingdir + '/query_time.pickle', 'rb') as f:
+            query_time_str = pickle.load(f)
+            logger.debug('Loading query_time.pickle')
+
+    with open(ctx.workingdir + '/query_words.pickle', 'rb') as f:
+            query_words = pickle.load(f)
+            logger.debug('Loading query_words.pickle')
+
+    query_words_list = query_words[:5]
+    logger.debug(query_words_list)
+    # for k,v in top_five_words
+    query_words = ""
+    for i in iter(query_words_list):
+        logger.debug(i['_id'])
+        query_words += '#%s ' % (i['_id'])
+
+    logger.debug(query_words)
+
     twitter_api = Twitter(auth = OAuth(ctx.s.read_twitter_access_token(), ctx.s.read_twitter_access_token_secret(),
                           ctx.s.read_twitter_consumer_key(), ctx.s.read_twitter_consumer_secret()))
 
     imgur_client = ImgurClient(ctx.s.read_imgur_client_id(), ctx.s.read_imgur_client_secret(),
                                ctx.s.read_imgur_access_token(), ctx.s.read_imgur_refresh_token())
     
-    
-    #TODO: Automate Status and Title
-    title = "Top 50 hashtags tweeted to @realDonaldTrump."
-    status = "Top 50 hashtags tweeted to @realDonaldTrump. "
+    quiet = quiet
+    logger.warning('quiet = %s', quiet)
 
-    with open(ctx.workingdir + '/output_file.pickle', 'rb') as f:
-            output_file = pickle.load(f)
-            logger.debug('Loading output_file.pickle')
-            
+    #TODO: Automate Status and Title with dates and hashtags from pickle
+    
+    title = "Top 50 hashtags mentioning @realDonaldTrump for %s %s" % (query_time_str, query_words)
+    status = "Top 50 hashtags mentioning @realDonaldTrump. %s %s" % (query_time_str, query_words)
+
 
     def upload_image(image_path, title, max_errors=3, sleep_seconds=60):
         """ Try to upload the image to imgur.com.
@@ -515,7 +537,12 @@ def post(ctx):
         while True:
             try:
                 logger.info("I'm going to upload this image: {0}".format(image_path))
-                return imgur_client.upload_from_path(image_path, config=config, anon=False)
+                if quiet is not True:
+                    return imgur_client.upload_from_path(image_path, config=config, anon=False)
+                else:
+                    logger.warning('<<<quiet mode>>>')
+                    return
+            
             except Exception as e:
                 errors += 1
                 logger.error(e)
@@ -527,7 +554,7 @@ def post(ctx):
 
                 time.sleep(sleep_seconds)
 
-    
+
     def update_status(status, max_errors=3, sleep_seconds=60):
         """
         :param status: text of the tweet
@@ -540,7 +567,11 @@ def post(ctx):
         while True:
             try:
                 logger.info('Tweeting status: %s', status)
-                return twitter_api.statuses.update(status=status)
+                if quiet is not True:
+                    return twitter_api.statuses.update(status=status)
+                else:
+                    logger.warning('<<<quiet mode>>>')
+                    return
             except Exception as e:
                 errors += 1
 
@@ -551,16 +582,22 @@ def post(ctx):
                     return None
 
                 time.sleep(sleep_seconds)
-    
-    imgur_id = upload_image(output_file, title)
 
-    if imgur_id is None:
-        logger.error("Error: failed uploading the word cloud image\n")
-        exit
 
-    imgur_id = imgur_id['id']
+    if quiet is not True:
+        imgur_id = upload_image(output_file, title)
 
-    status += 'http://imgur.com/' + imgur_id
-    tweet = update_status(status)
+        if imgur_id is None:
+            logger.error("Error: failed uploading the word cloud image\n")
+            exit
+
+        imgur_id = imgur_id['id']
+        status += 'http://imgur.com/' + imgur_id
+        tweet = update_status(status)
+    else:
+        imgur_id = '<<quiet>>' #TODO: create function to get a fake imgur_id or status
+        logger.info(imgur_id)
+        logger.info(title + '\n' + ctx.s.read_description_image_str())
+        logger.info(status)
 
     yield
