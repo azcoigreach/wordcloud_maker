@@ -458,7 +458,7 @@ def gen_wordcloud(ctx, width, height, max_words, mask, margin,
                    stopwords=stopwords, normalize_plurals=normalize_plurals,
                    font_path=font_path).generate_from_frequencies(words).recolor(colormap=recolor)
 
-    logger.info(Fore.YELLOW + ctx.fig.renderText('WORDCLOUD GENERATED'))
+    # logger.info(Fore.YELLOW + ctx.fig.renderText('WORDCLOUD GENERATED'))
     plt.figure()
     plt.imshow(wc, interpolation="bilinear")
     plt.axis("off")
@@ -496,7 +496,7 @@ def post(ctx, quiet):
             query_words = pickle.load(f)
             logger.debug('Loading query_words.pickle')
 
-    query_words_list = query_words[:5]
+    query_words_list = query_words[:10]
     logger.debug(query_words_list)
     # for k,v in top_five_words
     query_words = ""

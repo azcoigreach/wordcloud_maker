@@ -27,6 +27,15 @@ Chain commands together to automate.
 wordcloud_maker get_data gen_wordcloud post
 ```
 
+# DOCKER
+
+## RUN
+```
+docker run -tdi --name wordcloud_maker -v D:\apps\wordcloud_maker\app\output:/usr/src/app/output --restart
+ unless-stopped -e DISPLAY=$DISPLAY wordcloud_maker
+```
+
+
 # TODO
 |Complete   |Priority   |Task                                                            |
 |:---------:|:---------:|:---------------------------------------------------------------|
