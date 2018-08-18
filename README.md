@@ -24,7 +24,7 @@ wordcloud_maker --help
 
 Chain commands together to automate.
 ```
-wordcloud_maker get_data gen_wordcloud post
+wordcloud_maker get_data gen_wordcloud post [--quiet]
 ```
 
 # DOCKER
