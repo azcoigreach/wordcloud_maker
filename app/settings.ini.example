@@ -1,17 +1,17 @@
-[debug]
-debug = True
+[logging]
+logging = DEBUG
 
 [twitter]
-consumerkey = 
-consumersecret = 
-accesstoken = 
-accesstokensecret = 
+consumerkey = XXX
+consumersecret = XXX
+accesstoken = XXX
+accesstokensecret = XXX
 
 [imgur]
-clientid = 
-clientsecret = 
-accesstoken = 
-refreshtoken = 
+clientid = XXX
+clientsecret = XXX
+accesstoken = XXX
+refreshtoken = XXX
 
 [mongodb]
 
