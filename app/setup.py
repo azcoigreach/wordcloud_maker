@@ -18,7 +18,7 @@ setup(
         'numpy',
         'twitter',
         'imgurpython',
-        'configparser',
+        'configparser', 
         
     ],
     entry_points = '''
