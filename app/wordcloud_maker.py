@@ -519,7 +519,7 @@ def post(ctx, quiet):
     
     title = "Top 50 hashtags mentioning @realDonaldTrump for %s %s" % (query_time_str, query_words)
     status = "Top 50 hashtags mentioning @realDonaldTrump. %s %s" % (query_time_str, query_words)
-    album = 'wordclouds'
+    album = 'io8SFsg'
 
     def upload_image(image_path, title, max_errors=3, sleep_seconds=60):
         """ Try to upload the image to imgur.com.
