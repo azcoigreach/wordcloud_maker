@@ -22,7 +22,7 @@ server_port = 27017
 botname = azcoigreach
 wordcloudhashtag = wordcloud, wordclouds, cloudwords, cloudword
 descriptionimagestr = (http://twitter.com/azcoigreach)
-imgur_aldum_id = xxxxxx
+imgur_album_id = xxxxxx
 
 outputdir = ./output
 workingdir = ./working
