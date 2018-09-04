@@ -81,6 +81,9 @@ class Settings(object):
     def read_description_image_str(self):
         return self.config[self.CONFIGS]['descriptionimagestr']    
 
+    def read_imgur_album_id_str(self):
+        return self.config[self.CONFIGS]['imgur_album_id']   
+
     def read_output_dir(self):
         return self.config[self.CONFIGS]['outputdir']
 
