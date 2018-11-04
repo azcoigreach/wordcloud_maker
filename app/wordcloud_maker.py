@@ -148,11 +148,7 @@ def get_data(ctx, server_ip, server_port, start_time, end_time, offset, max_resu
     Populates query_words.pickle with a list of hashtags and frequencies from a MongoDB
     database containing raw Twitter data.
     '''
-    # with open(ctx.workingdir + '/bot.pickle', 'rb') as f:
-    #     bot = pickle.load(f)
-
-    # logger.warning('<<<--gd in bot mode %s -->>>', bot)
-
+    
     class CommandLogger(monitoring.CommandListener):
 
         def started(self, event):
@@ -356,12 +352,8 @@ def gen_wordcloud(ctx, width, height, max_words, mask, margin,
     Generates wordcloud from list of words and frequencies stored in query_words.pickle.
     '''
 
-    # with open(ctx.workingdir + '/bot.pickle', 'rb') as f:
-    #     bot = pickle.load(f)
-    
     logger.debug(ctx.workingdir)
-    # logger.warning('<<<--bot mode %s -->>>', bot)
-
+    
     start_time = time.strftime("%Y%m%d_%H%M%S")
     output_file = str(ctx.outputdir + "/wordcloud_" + start_time + ".png")
 
@@ -496,13 +488,18 @@ def post(ctx, quiet):
             query_words = pickle.load(f)
             logger.debug('Loading query_words.pickle')
 
-    query_words_list = query_words[:10]
+    query_words_list = query_words[:50]
+    query_words_list_short = query_words[:10]
     logger.debug(query_words_list)
     # for k,v in top_five_words
     query_words = ""
     for i in iter(query_words_list):
-        logger.debug(i['_id'])
-        query_words += '#%s ' % (i['_id'])
+        logger.debug(i['_id'] + ':' + str(i['count']))
+        query_words += '#%s : %s\n' % (i['_id'], str(i['count']))
+    query_words_short = ""
+    for i in iter(query_words_list_short):
+        logger.debug(i['_id'] + ':' + str(i['count']))
+        query_words_short += '#%s ' % (i['_id'])
 
     logger.debug(query_words)
 
@@ -517,8 +514,9 @@ def post(ctx, quiet):
 
     #TODO: Automate Status and Title with dates and hashtags from pickle
     
-    title = "Top 50 hashtags mentioning @realDonaldTrump for %s %s" % (query_time_str, query_words)
-    status = "Top 50 hashtags mentioning @realDonaldTrump. %s %s" % (query_time_str, query_words)
+    imgur_title = "Top 50 hashtags mentioning @realDonaldTrump for %s %s" % (query_time_str, query_words_short)
+    imgur_desc = "Top 50 hashtags mentioning @realDonaldTrump. %s\n%s" % (query_time_str, query_words)
+    twitter_status = "Top 50 hashtags mentioning @realDonaldTrump for %s\n%s" % (query_time_str, query_words_short)
     # album = ctx.s.read_imgur_album_id_str()
 
     def upload_image(image_path, title, max_errors=3, sleep_seconds=60):
@@ -530,10 +528,10 @@ def post(ctx, quiet):
         :return: an imgur object (use `id` key to get the id to use in https://imgur.com/<id>),
                  None if an error occurs
         """
-        config = {'title': title,
-                  'name': title,
+        config = {'title': imgur_title,
+                  'name': imgur_title,
                 #   'album': album,
-                  'description': title + '\n' + ctx.s.read_description_image_str()}
+                  'description': imgur_desc + '\n' + ctx.s.read_description_image_str()}
         errors = 0
         while True:
             try:
@@ -556,7 +554,7 @@ def post(ctx, quiet):
                 time.sleep(sleep_seconds)
 
 
-    def update_status(status, max_errors=3, sleep_seconds=60):
+    def update_status(twitter_status, max_errors=3, sleep_seconds=60):
         """
         :param status: text of the tweet
         :param max_errors: max number of retries
@@ -567,9 +565,9 @@ def post(ctx, quiet):
         errors = 0
         while True:
             try:
-                logger.info('Tweeting status: %s', status)
+                logger.info('Tweeting status: %s', twitter_status)
                 if quiet is not True:
-                    return twitter_api.statuses.update(status=status)
+                    return twitter_api.statuses.update(status=twitter_status)
                 else:
                     logger.warning('<<<quiet mode>>>')
                     return
@@ -586,19 +584,19 @@ def post(ctx, quiet):
 
 
     if quiet is not True:
-        imgur_id = upload_image(output_file, title)
+        imgur_id = upload_image(output_file, imgur_title)
 
         if imgur_id is None:
             logger.error("Error: failed uploading the word cloud image\n")
             exit
 
         imgur_id = imgur_id['id']
-        status += 'http://imgur.com/' + imgur_id
-        tweet = update_status(status)
+        twitter_status += '\nhttp://imgur.com/' + imgur_id
+        tweet = update_status(twitter_status)
     else:
         imgur_id = '<<quiet>>' #TODO: create function to get a fake imgur_id or status
         logger.info(imgur_id)
-        logger.info(title + '\n' + ctx.s.read_description_image_str())
-        logger.info(status)
+        logger.info(imgur_title + '\n' + ctx.s.read_description_image_str())
+        logger.info(twitter_status)
 
     yield
