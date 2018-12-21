@@ -23,6 +23,7 @@ from imgurpython.helpers.error import ImgurClientError, ImgurClientRateLimitErro
 from twitter import *
 from settings import Settings
 from functools import update_wrapper
+import imageio
 
 coloredlogs.install(level='DEBUG')
 logger = logging.getLogger(__name__)
@@ -467,7 +468,7 @@ def gen_wordcloud(ctx, width, height, max_words, mask, margin,
         plt.show()
     yield
 
-# Automation
+# POST to IMGUR and TWITTER
 @main.command()
 @click.option('--quiet', is_flag=True,
               help='Quiet mode - no posting')
@@ -491,7 +492,6 @@ def post(ctx, quiet):
     query_words_list = query_words[:50]
     query_words_list_short = query_words[:10]
     logger.debug(query_words_list)
-    # for k,v in top_five_words
     query_words = ""
     for i in iter(query_words_list):
         logger.debug(i['_id'] + ':' + str(i['count']))
@@ -512,13 +512,10 @@ def post(ctx, quiet):
     quiet = quiet
     logger.warning('quiet = %s', quiet)
 
-    #TODO: Automate Status and Title with dates and hashtags from pickle
-    
     imgur_title = "Top 50 hashtags mentioning @realDonaldTrump for %s %s" % (query_time_str, query_words_short)
     imgur_desc = "Top 50 hashtags mentioning @realDonaldTrump. %s\n%s" % (query_time_str, query_words)
     twitter_status = "Top 50 hashtags mentioning @realDonaldTrump for %s\n%s" % (query_time_str, query_words_short)
-    # album = ctx.s.read_imgur_album_id_str()
-
+    
     def upload_image(image_path, title, max_errors=3, sleep_seconds=60):
         """ Try to upload the image to imgur.com.
         :param image_path: path to the image file
@@ -530,7 +527,6 @@ def post(ctx, quiet):
         """
         config = {'title': imgur_title,
                   'name': imgur_title,
-                #   'album': album,
                   'description': imgur_desc + '\n' + ctx.s.read_description_image_str()}
         errors = 0
         while True:
@@ -600,3 +596,19 @@ def post(ctx, quiet):
         logger.info(twitter_status)
 
     yield
+
+# Generate Animated GIF
+@main.command('gen_gif')
+@pass_context
+@generator
+def gen_gif(ctx):
+    '''
+    Generates animated GIF of JPEGs
+    '''
+    logger.debug(ctx.outputdir)
+ 
+    with imageio.get_writer(ctx.outputdir + '/movie.gif', mode='I') as writer:
+        for filename in os.listdir(ctx.outputdir):
+            image = imageio.imread(ctx.outputdir + '/' + filename)
+            logger.debug(filename)
+            writer.append_data(image)

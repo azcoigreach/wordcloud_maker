@@ -4,7 +4,7 @@ setup(
     author="azcoigreach",
     author_email="azcoigreach@gmail.com",
     name = 'Wordcloud Maker',
-    version = '0.5.2',
+    version = '0.6.0',
     py_modules = ['wordcloud_maker'],
     install_requires = [
         'click',
@@ -19,6 +19,7 @@ setup(
         'twitter',
         'imgurpython',
         'configparser', 
+        'imageio',
         
     ],
     entry_points = '''
